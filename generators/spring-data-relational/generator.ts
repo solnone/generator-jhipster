@@ -26,16 +26,15 @@ import writeTask from './files.js';
 import cleanupTask from './cleanup.js';
 import writeEntitiesTask, { cleanupEntitiesTask } from './entity-files.js';
 import { getDBCExtraOption, getJdbcUrl, getR2dbcUrl, prepareSqlApplicationProperties } from './support/index.js';
-import {
-  getDatabaseDriverForDatabase,
-  getDatabaseTypeMavenDefinition,
-  getH2MavenDefinition,
-  javaSqlDatabaseArtifacts,
-} from './internal/dependencies.js';
+import { getDatabaseTypeMavenDefinition, getH2MavenDefinition, javaSqlDatabaseArtifacts } from './internal/dependencies.js';
+import type { Application as SpringDataRelationalApplication, Entity as SpringDataRelationalEntity } from './types.js';
 
 const { SQL } = databaseTypes;
 
-export default class SqlGenerator extends BaseApplicationGenerator {
+export default class SqlGenerator extends BaseApplicationGenerator<
+  SpringDataRelationalEntity,
+  SpringDataRelationalApplication<SpringDataRelationalEntity>
+> {
   async beforeQueue() {
     if (!this.fromBlueprint) {
       await this.composeWithBlueprints();
@@ -62,11 +61,8 @@ export default class SqlGenerator extends BaseApplicationGenerator {
     return this.asPreparingTaskGroup({
       async preparing({ application }) {
         prepareSqlApplicationProperties({ application });
-        const anyApp = application as any;
-        anyApp.devDatabaseExtraOptions = getDBCExtraOption(anyApp.devDatabaseType);
-        anyApp.prodDatabaseExtraOptions = getDBCExtraOption(anyApp.prodDatabaseType);
-
-        anyApp.prodDatabaseDriver = getDatabaseDriverForDatabase(application.prodDatabaseType!);
+        application.devDatabaseExtraOptions = getDBCExtraOption(application.devDatabaseType);
+        application.prodDatabaseExtraOptions = getDBCExtraOption(application.prodDatabaseType);
       },
     });
   }
@@ -83,6 +79,13 @@ export default class SqlGenerator extends BaseApplicationGenerator {
             relationship.persistableRelationship = true;
           }
         });
+
+        const entityAny = entity as any;
+        if (isReservedTableName(entity.entityInstance, entityAny.prodDatabaseType ?? entity.databaseType) && entityAny.jhiPrefix) {
+          entity.entityJpqlInstance = `${entityAny.jhiPrefix}${entity.entityClass}`;
+        } else {
+          entity.entityJpqlInstance = entity.entityInstance;
+        }
       },
     });
   }
@@ -138,7 +141,7 @@ export default class SqlGenerator extends BaseApplicationGenerator {
         });
       },
       addLog({ source }) {
-        source.addLogbackTestLog?.({
+        source.addTestLog?.({
           name: 'org.hibernate.orm.incubating',
           level: 'ERROR',
         });

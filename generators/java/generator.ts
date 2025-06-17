@@ -18,8 +18,26 @@
  */
 
 import BaseApplicationGenerator from '../base-application/index.js';
+import type {
+  Application as JavaApplication,
+  Config as JavaConfig,
+  Entity as JavaEntity,
+  Options as JavaOptions,
+  Source as JavaSource,
+} from './types.js';
 
-export default class JavaGenerator extends BaseApplicationGenerator {
+/**
+ * Utility class with types.
+ */
+export class JavaApplicationGenerator extends BaseApplicationGenerator<
+  JavaEntity,
+  JavaApplication<JavaEntity>,
+  JavaConfig,
+  JavaOptions,
+  JavaSource
+> {}
+
+export default class JavaGenerator extends JavaApplicationGenerator {
   customLifecycle = true;
 
   async beforeQueue() {

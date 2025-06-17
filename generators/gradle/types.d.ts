@@ -1,4 +1,7 @@
 import type { RequireOneOrNone } from 'type-fest';
+import type { Application as JavaApplication, Entity as JavaEntity } from '../java/index.js';
+import type { ExportApplicationPropertiesFromCommand } from '../../lib/command/types.js';
+import type GradleCommand from './command.js';
 
 export type GradleComment = { comment?: string };
 
@@ -35,7 +38,7 @@ export type GradleCatalogNeedleOptions = { gradleVersionCatalogFile?: string };
 
 export type GradleNeedleOptions = GradleFileNeedleOptions & GradleCatalogNeedleOptions;
 
-export type GradleSourceType = {
+export type Source = {
   _gradleDependencies?: GradleDependency[];
   applyFromGradle?(script: GradleScript): void;
   addGradleDependency?(dependency: GradleDependency, options?: GradleFileNeedleOptions): void;
@@ -58,8 +61,11 @@ export type GradleSourceType = {
   addGradleBuildSrcDependencyCatalogLibraries?(catalogVersion: GradleLibrary[]): void;
 };
 
-export type GradleApplication = {
-  gradleVersion?: string;
-  gradleBuildSrc?: string;
-  enableGradleDevelocity?: boolean;
-};
+export { JavaEntity as Entity };
+
+export type Application<E extends JavaEntity> = JavaApplication<E> &
+  ExportApplicationPropertiesFromCommand<typeof GradleCommand> & {
+    gradleVersion?: string;
+    gradleBuildSrc?: string;
+    enableGradleDevelocity?: boolean;
+  };

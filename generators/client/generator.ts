@@ -29,11 +29,12 @@ import { addEnumerationFiles } from './entity-files.js';
 import { writeFiles as writeCommonFiles } from './files-common.js';
 import { askForClientTheme, askForClientThemeVariant } from './prompts.js';
 import { filterEntitiesAndPropertiesForClient } from './support/filter-entities.js';
+import type { Application as ClientApplication, Entity as ClientEntity } from './types.d.ts';
 
 const { ANGULAR, NO: CLIENT_FRAMEWORK_NO } = clientFrameworkTypes;
 const { CYPRESS } = testFrameworkTypes;
 
-export default class JHipsterClientGenerator extends BaseApplicationGenerator {
+export default class ClientGenerator extends BaseApplicationGenerator<ClientEntity, ClientApplication<ClientEntity>> {
   async beforeQueue() {
     if (!this.fromBlueprint) {
       await this.composeWithBlueprints();
@@ -241,7 +242,7 @@ export default class JHipsterClientGenerator extends BaseApplicationGenerator {
         devDependencies.set('concurrently', application.nodeDependencies.concurrently);
 
         if (application.clientFrameworkReact) {
-          scriptsStorage.set('ci:frontend:test', 'npm run webapp:build:$npm_package_config_default_environment && npm run test-ci');
+          scriptsStorage.set('ci:frontend:test', 'npm run webapp:build:$npm_package_config_default_environment && npm run test');
         } else {
           scriptsStorage.set('ci:frontend:build', 'npm run webapp:build:$npm_package_config_default_environment');
           scriptsStorage.set('ci:frontend:test', 'npm run ci:frontend:build && npm test');

@@ -28,11 +28,11 @@ import type { GenericTaskGroup } from '../base-core/types.js';
 import type { SimpleTaskTypes } from './tasks.js';
 import { CONTEXT_DATA_APPLICATION_KEY, CONTEXT_DATA_SOURCE_KEY } from './support/index.js';
 import type {
-  Application as SimpleApplication,
-  Config as SimpleApplicationConfig,
-  Features as SimpleApplicationFeatures,
-  Options as SimpleApplicationOptions,
-  Source as SimpleApplicationSource,
+  Application as BaseSimpleApplicationApplication,
+  Config as BaseSimpleApplicationConfig,
+  Features as BaseSimpleApplicationFeatures,
+  Options as BaseSimpleApplicationOptions,
+  Source as BaseSimpleApplicationSource,
 } from './types.js';
 import { BOOTSTRAP_APPLICATION, CUSTOM_PRIORITIES } from './priorities.js';
 
@@ -63,13 +63,13 @@ const getFirstArgForPriority = (priorityName: string) => ({
  * This is the base class for a generator that generates entities.
  */
 export default class BaseSimpleApplicationGenerator<
-  Application extends SimpleApplication = SimpleApplication,
-  ConfigType extends SimpleApplicationConfig = SimpleApplicationConfig,
-  Options extends SimpleApplicationOptions = SimpleApplicationOptions,
-  Source extends SimpleApplicationSource = SimpleApplicationSource,
-  Features extends SimpleApplicationFeatures = SimpleApplicationFeatures,
-  TaskTypes extends SimpleTaskTypes<Application, Source> = SimpleTaskTypes<Application, Source>,
-> extends BaseGenerator<ConfigType, Options, Source, Features, TaskTypes> {
+  Application extends BaseSimpleApplicationApplication = BaseSimpleApplicationApplication,
+  Config extends BaseSimpleApplicationConfig = BaseSimpleApplicationConfig,
+  Options extends BaseSimpleApplicationOptions = BaseSimpleApplicationOptions,
+  Source extends BaseSimpleApplicationSource = BaseSimpleApplicationSource,
+  Features extends BaseSimpleApplicationFeatures = BaseSimpleApplicationFeatures,
+  Tasks extends SimpleTaskTypes<Application, Source> = SimpleTaskTypes<Application, Source>,
+> extends BaseGenerator<Config, Options, Source, Features, Tasks> {
   static BOOTSTRAP_APPLICATION = BaseSimpleApplicationGenerator.asPriority(BOOTSTRAP_APPLICATION);
 
   constructor(args: string | string[], options: Options, features: Features) {
@@ -82,7 +82,7 @@ export default class BaseSimpleApplicationGenerator<
     this.registerPriorities(CUSTOM_PRIORITIES);
   }
 
-  get #application(): Application {
+  override get context(): Application {
     return this.getContextData(CONTEXT_DATA_APPLICATION_KEY, {
       factory: () => ({ nodeDependencies: {}, customizeTemplatePaths: [], user: undefined }) as unknown as Application,
     });
@@ -95,9 +95,9 @@ export default class BaseSimpleApplicationGenerator<
   /**
    * JHipster config with default values fallback
    */
-  override get jhipsterConfigWithDefaults(): Readonly<ConfigType> {
+  override get jhipsterConfigWithDefaults(): Readonly<Config> {
     const configWithDefaults = getConfigWithDefaults(super.jhipsterConfigWithDefaults);
-    return configWithDefaults as ConfigType;
+    return configWithDefaults as Config;
   }
 
   dependsOnBootstrapApplicationBase(
@@ -123,13 +123,13 @@ export default class BaseSimpleApplicationGenerator<
 
     const args: Record<string, any> = {};
     if (application) {
-      args.application = this.#application;
+      args.application = this.context;
     }
     if (source) {
       args.source = this.#source;
     }
     if (applicationDefaults) {
-      args.applicationDefaults = (...args) => mutateData(this.#application, ...args.map(data => ({ __override__: false, ...data })));
+      args.applicationDefaults = (...args) => mutateData(this.context, ...args.map(data => ({ __override__: false, ...data })));
     }
     return args;
   }
@@ -142,8 +142,8 @@ export default class BaseSimpleApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asBootstrapApplicationTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['BootstrapApplicationTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['BootstrapApplicationTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['BootstrapApplicationTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['BootstrapApplicationTaskParam']> {
     return taskGroup;
   }
 }

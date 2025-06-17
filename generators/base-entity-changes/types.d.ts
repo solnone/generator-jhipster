@@ -1,10 +1,4 @@
-import type {
-  Config as BaseApplicationConfig,
-  Features as BaseApplicationFeatures,
-  Options as BaseApplicationOptions,
-} from '../base-application/types.js';
-
-export type { Source } from '../base-application/types.js';
+export type { Application, Config, Entity, Field, Options, Features, Relationship, Source } from '../base-application/types.js';
 
 export type BaseChangelog = {
   newEntity: boolean;
@@ -26,9 +20,3 @@ export type BaseChangelog = {
   addedDefaultValueFields: any[];
   changelogData: any;
 };
-
-export type Config = BaseApplicationConfig;
-
-export type Options = BaseApplicationOptions;
-
-export type Features = BaseApplicationFeatures;

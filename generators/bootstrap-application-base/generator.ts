@@ -42,8 +42,13 @@ import { loadCommandConfigsIntoApplication, loadCommandConfigsKeysIntoTemplatesC
 import { getConfigWithDefaults } from '../../lib/jhipster/default-application-options.js';
 import { isWin32 } from '../base-core/support/index.ts';
 import { removeFieldsWithNullishValues } from '../../lib/utils/index.js';
-import { convertFieldBlobType, getBlobContentType, isFieldBinaryType, isFieldBlobType } from '../../lib/application/field-types.js';
-import type { Entity } from '../../lib/types/application/entity.js';
+import {
+  convertFieldBlobType,
+  getBlobContentType,
+  isFieldBinaryType,
+  isFieldBlobType,
+} from '../base-application/internal/types/field-types.ts';
+import type { EntityAll } from '../base-application/entity-all.js';
 import { upperFirst } from '../../lib/jdl/core/utils/string-utils.js';
 import { baseNameProperties } from '../project-name/support/index.js';
 import { createAuthorityEntity, createUserEntity, createUserManagementEntity } from './utils.js';
@@ -129,7 +134,9 @@ export default class BootstrapApplicationBase extends BaseApplicationGenerator {
   get loading() {
     return this.asLoadingTaskGroup({
       loadDefaults({ application, applicationDefaults }) {
-        applicationDefaults(getConfigWithDefaults(application as any) as any);
+        let { applyDefaults } = this.options;
+        applyDefaults ??= getConfigWithDefaults as any;
+        applicationDefaults(applyDefaults!(application));
       },
       loadApplication({ application, control, applicationDefaults }) {
         applicationDefaults({
@@ -477,7 +484,7 @@ export default class BootstrapApplicationBase extends BaseApplicationGenerator {
         entity.anyRelationshipIsRequired = entity.relationships.some(rel => rel.relationshipRequired || rel.id);
       },
       checkForCircularRelationships({ entity }) {
-        const detectCyclicRequiredRelationship = (entity: Entity, relatedEntities: Set<Entity>) => {
+        const detectCyclicRequiredRelationship = (entity: EntityAll, relatedEntities: Set<EntityAll>) => {
           if (relatedEntities.has(entity)) return true;
           relatedEntities.add(entity);
           return entity.relationships

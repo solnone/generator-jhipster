@@ -44,7 +44,7 @@ import type {
   ParseableCommand,
 } from '../../lib/command/index.js';
 import { packageJson } from '../../lib/index.js';
-import { loadConfig, loadConfigDefaults, loadDerivedConfig } from '../../lib/internal/index.js';
+import { convertWriteFileSectionsToBlocks, loadConfig, loadConfigDefaults, loadDerivedConfig } from '../base-core/internal/index.js';
 import baseCommand from '../base/command.js';
 import { dockerPlaceholderGenerator } from '../docker/utils.js';
 import { GENERATOR_JHIPSTER } from '../generator-constants.js';
@@ -52,7 +52,6 @@ import { getGradleLibsVersionsProperties } from '../gradle/support/dependabot-gr
 import { convertConfigToOption, extractArgumentsFromConfigs } from '../../lib/command/index.js';
 import type GeneratorsByNamespace from '../types.js';
 import type { CascatedEditFileCallback, EditFileCallback, EditFileOptions, WriteFileOptions } from './api.js';
-import { convertWriteFileSectionsToBlocks } from './internal/index.js';
 import { CUSTOM_PRIORITIES, PRIORITY_NAMES, PRIORITY_PREFIX, QUEUES } from './priorities.ts';
 import { createJHipster7Context, joinCallbacks } from './support/index.js';
 import type {
@@ -97,10 +96,10 @@ const deepMerge = (source1: any, source2: any) => mergeWith({}, source1, source2
  * This is the base class for a generator for every generator.
  */
 export default class CoreGenerator<
-  ConfigType extends CoreConfig = CoreConfig,
+  Config extends CoreConfig = CoreConfig,
   Options extends CoreOptions = CoreOptions,
   Features extends CoreFeatures = CoreFeatures,
-> extends YeomanGenerator<ConfigType, Options, Features> {
+> extends YeomanGenerator<Config, Options, Features> {
   static asPriority = asPriority;
 
   static INITIALIZING = asPriority(INITIALIZING);
@@ -131,7 +130,6 @@ export default class CoreGenerator<
 
   static END = asPriority(END);
 
-  context?: Record<string, any>;
   useVersionPlaceholders?: boolean;
   skipChecks?: boolean;
   ignoreNeedlesError?: boolean;
@@ -141,7 +139,7 @@ export default class CoreGenerator<
   relative = posixRelative;
 
   readonly logger: Logger;
-  jhipsterConfig!: ConfigType;
+  jhipsterConfig!: Config;
   /**
    * @deprecated
    */
@@ -177,7 +175,7 @@ export default class CoreGenerator<
       this._config = this._getStorage('generator-jhipster');
 
       /* JHipster config using proxy mode used as a plain object instead of using get/set. */
-      this.jhipsterConfig = this.config.createProxy() as ConfigType;
+      this.jhipsterConfig = this.config.createProxy() as Config;
 
       /* Options parsing must be executed after forcing jhipster storage namespace and after sharedData have been populated */
       this.#parseJHipsterConfigs(baseCommand.configs);
@@ -203,6 +201,10 @@ export default class CoreGenerator<
     }
   }
 
+  get context(): any {
+    return undefined;
+  }
+
   /**
    * Override yeoman generator's usage function to fine tune --help message.
    */
@@ -213,8 +215,8 @@ export default class CoreGenerator<
   /**
    * JHipster config with default values fallback
    */
-  get jhipsterConfigWithDefaults(): Readonly<ConfigType> {
-    return removeFieldsWithNullishValues(this.config.getAll()) as ConfigType;
+  get jhipsterConfigWithDefaults(): Readonly<Config> {
+    return removeFieldsWithNullishValues(this.config.getAll()) as Config;
   }
 
   /**
@@ -342,10 +344,9 @@ You can ignore this error by passing '--skip-checks' to jhipster command.`);
           const command = await this.#getCurrentJHipsterCommand();
           if (!command.configs) return;
 
-          const taskArgs = this.getArgsForPriority(PRIORITY_NAMES.LOADING);
-          const [{ application }] = taskArgs as any;
-          loadConfig.call(this, command.configs, { application: application ?? this });
-          loadDerivedConfig(command.configs, { application });
+          const context = this.context;
+          loadConfig.call(this, command.configs, { application: context });
+          loadDerivedConfig(command.configs, { application: context });
         } catch {
           // Ignore non existing command
         }
@@ -361,9 +362,8 @@ You can ignore this error by passing '--skip-checks' to jhipster command.`);
           const command = await this.#getCurrentJHipsterCommand();
           if (!command.configs) return;
 
-          const taskArgs = this.getArgsForPriority(PRIORITY_NAMES.PREPARING);
-          const [{ application }] = taskArgs as any;
-          loadConfigDefaults(command.configs, { context: application, scopes: ['blueprint', 'storage', 'context'] });
+          const context = this.context;
+          loadConfigDefaults(command.configs, { context, scopes: ['blueprint', 'storage', 'context'] });
         } catch {
           // Ignore non existing command
         }
@@ -481,7 +481,7 @@ You can ignore this error by passing '--skip-checks' to jhipster command.`);
       if (optionValue !== undefined) {
         optionValue = type !== Array && type !== Function ? type(optionValue) : optionValue;
         if (optionsDesc.scope === 'storage') {
-          this.config.set(optionName as keyof ConfigType, optionValue);
+          this.config.set(optionName as keyof Config, optionValue);
         } else if (optionsDesc.scope === 'blueprint') {
           this.blueprintStorage!.set(optionName, optionValue);
         } else if (optionsDesc.scope === 'generator') {
@@ -525,7 +525,7 @@ You can ignore this error by passing '--skip-checks' to jhipster command.`);
           } else if (argumentDef.scope === 'context') {
             this.context![argumentName] = convertedValue;
           } else if (argumentDef.scope === 'storage') {
-            this.config.set(argumentName as keyof ConfigType, convertedValue);
+            this.config.set(argumentName as keyof Config, convertedValue);
           } else if (argumentDef.scope === 'blueprint') {
             this.blueprintStorage!.set(argumentName, convertedValue);
           }

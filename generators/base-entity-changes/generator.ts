@@ -17,19 +17,19 @@
  * limitations under the License.
  */
 import { existsSync, readFileSync } from 'fs';
-import type { Field } from '../base-application/index.js';
-import GeneratorBaseEntityChanges from '../base-application/index.js';
+import type { FieldAll } from '../base-application/field-all.js';
+import BaseApplicationGenerator from '../base-application/index.js';
 import { PRIORITY_NAMES } from '../base-application/priorities.js';
 import { loadEntitiesAnnotations, loadEntitiesOtherSide } from '../base-application/support/index.js';
 import { relationshipEquals, relationshipNeedsForeignKeyRecreationOnly } from '../liquibase/support/index.js';
 import { addEntitiesOtherRelationships } from '../server/support/index.js';
 import type { TaskTypes as ApplicationTaskTypes } from '../base-application/tasks.js';
-import type { Entity as ApplicationEntity } from '../../lib/types/application/entity.js';
 import type { TaskParamWithApplication } from '../base-simple-application/tasks.js';
-import type { ApplicationAll } from '../base-application/types-all.js';
 import type {
   BaseChangelog,
+  Application as BaseEntityChangesApplication,
   Config as BaseEntityChangesConfig,
+  Entity as BaseEntityChangesEntity,
   Features as BaseEntityChangesFeatures,
   Options as BaseEntityChangesOptions,
   Source as BaseEntityChangesSource,
@@ -52,7 +52,11 @@ const baseChangelog: () => Omit<BaseChangelog, 'changelogDate' | 'entityName' | 
   changelogData: {},
 });
 
-type BaseEntityChangesTaskTypes<E, A, S extends BaseEntityChangesSource> = ApplicationTaskTypes<E, A, S> & {
+type BaseEntityChangesTaskTypes<
+  E extends BaseEntityChangesEntity,
+  A extends BaseEntityChangesApplication<E>,
+  S extends BaseEntityChangesSource,
+> = ApplicationTaskTypes<E, A, S> & {
   DefaultTaskParam: { entityChanges?: BaseChangelog[] };
   WritingEntitiesTaskParam: { entityChanges?: BaseChangelog[] };
   PostWritingEntitiesTaskParam: { entityChanges?: BaseChangelog[] };
@@ -62,14 +66,14 @@ type BaseEntityChangesTaskTypes<E, A, S extends BaseEntityChangesSource> = Appli
  * This is the base class for a generator for every generator.
  */
 export default abstract class BaseEntityChangesGenerator<
-  Entity extends ApplicationEntity = ApplicationEntity,
-  Application extends ApplicationAll<Entity> = ApplicationAll<Entity>,
-  ConfigType extends BaseEntityChangesConfig = BaseEntityChangesConfig,
+  Entity extends BaseEntityChangesEntity = BaseEntityChangesEntity,
+  Application extends BaseEntityChangesApplication<Entity> = BaseEntityChangesApplication<Entity>,
+  Config extends BaseEntityChangesConfig = BaseEntityChangesConfig,
   Options extends BaseEntityChangesOptions = BaseEntityChangesOptions,
   Source extends BaseEntityChangesSource = BaseEntityChangesSource,
   Features extends BaseEntityChangesFeatures = BaseEntityChangesFeatures,
-  TaskTypes extends BaseEntityChangesTaskTypes<Entity, Application, Source> = BaseEntityChangesTaskTypes<Entity, Application, Source>,
-> extends GeneratorBaseEntityChanges<Entity, Application, ConfigType, Options, Source, Features, TaskTypes> {
+  Tasks extends BaseEntityChangesTaskTypes<Entity, Application, Source> = BaseEntityChangesTaskTypes<Entity, Application, Source>,
+> extends BaseApplicationGenerator<Entity, Application, Config, Options, Source, Features, Tasks> {
   recreateInitialChangelog!: boolean;
   private entityChanges!: any[];
 
@@ -80,7 +84,7 @@ export default abstract class BaseEntityChangesGenerator<
   ): TaskParamWithApplication<Application> {
     const firstArg = super.getTaskFirstArgForPriority(priorityName);
     if (([DEFAULT, WRITING_ENTITIES, POST_WRITING_ENTITIES] as string[]).includes(priorityName)) {
-      const { application, entities } = firstArg as TaskTypes['DefaultTaskParam'];
+      const { application, entities } = firstArg as Tasks['DefaultTaskParam'];
       this.entityChanges = this.generateIncrementalChanges({ application, entities });
     }
     if (([DEFAULT] as string[]).includes(priorityName)) {
@@ -100,7 +104,7 @@ export default abstract class BaseEntityChangesGenerator<
   protected generateIncrementalChanges({
     application,
     entities: paramEntities,
-  }: Pick<TaskTypes['DefaultTaskParam'], 'application' | 'entities'>): BaseChangelog[] {
+  }: Pick<Tasks['DefaultTaskParam'], 'application' | 'entities'>): BaseChangelog[] {
     const recreateInitialChangelog = this.recreateInitialChangelog;
     const { incrementalChangelog } = application;
     const entityNames = paramEntities.filter(e => !e.builtIn).map(e => e.name);
@@ -241,11 +245,11 @@ export default abstract class BaseEntityChangesGenerator<
     });
   }
 
-  private hasAnyDefaultValue(field: Field): boolean {
+  private hasAnyDefaultValue(field: FieldAll): boolean {
     return field.defaultValue !== undefined || field.defaultValueComputed !== undefined;
   }
 
-  private doDefaultValuesDiffer(field1: Field, field2: Field): boolean {
+  private doDefaultValuesDiffer(field1: FieldAll, field2: FieldAll): boolean {
     return field1.defaultValue !== field2.defaultValue || field1.defaultValueComputed !== field2.defaultValueComputed;
   }
 }

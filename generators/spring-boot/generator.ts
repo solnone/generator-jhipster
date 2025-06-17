@@ -58,7 +58,7 @@ import {
   websocketTypes,
 } from '../../lib/jhipster/index.js';
 import { getPomVersionProperties, parseMavenPom } from '../maven/support/index.js';
-import type { FieldType } from '../../lib/application/field-types.js';
+import type { FieldType } from '../../lib/jhipster/field-types.ts';
 import { writeFiles as writeEntityFiles } from './entity-files.js';
 import cleanupTask from './cleanup.js';
 import { serverFiles } from './files.js';
@@ -323,8 +323,8 @@ export default class SpringBootGenerator extends BaseApplicationGenerator {
               contentToAdd: `<logger name="${name}" level="${level}"/>`,
             }),
           );
-        source.addLogbackMainLog = opts => source.addLogbackLogEntry!({ file: 'src/main/resources/logback-spring.xml', ...opts });
-        source.addLogbackTestLog = opts => source.addLogbackLogEntry!({ file: 'src/test/resources/logback.xml', ...opts });
+        source.addMainLog = opts => source.addLogbackLogEntry!({ file: 'src/main/resources/logback-spring.xml', ...opts });
+        source.addTestLog = opts => source.addLogbackLogEntry!({ file: 'src/test/resources/logback.xml', ...opts });
       },
       addApplicationPropertiesNeedles({ application, source }) {
         source.addApplicationPropertiesContent = needles =>
@@ -656,7 +656,7 @@ ${classProperties
       addSpringBootCompose({ application, source }) {
         if (!application.dockerServices?.length) return;
 
-        source.addLogbackMainLog!({ name: 'org.springframework.boot.docker', level: 'WARN' });
+        source.addMainLog!({ name: 'org.springframework.boot.docker', level: 'WARN' });
 
         const dockerComposeArtifact = { groupId: 'org.springframework.boot', artifactId: 'spring-boot-docker-compose' };
         if (application.buildToolGradle) {

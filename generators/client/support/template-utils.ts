@@ -20,9 +20,9 @@ import assert from 'node:assert';
 import path from 'node:path';
 
 import { clientFrameworkTypes, fieldTypes } from '../../../lib/jhipster/index.js';
-import type { PrimaryKey } from '../../../lib/types/application/entity.js';
-import type { FieldType } from '../../../lib/application/field-types.js';
-import type { Field } from '../../../lib/types/application/field.js';
+import type { FieldType } from '../../../lib/jhipster/field-types.js';
+import type { PrimaryKey } from '../../base-application/types.js';
+import type { FieldAll } from '../../base-application/field-all.js';
 import { getEntryIfTypeOrTypeAttribute } from './types-utils.js';
 
 const { STRING: TYPE_STRING, UUID: TYPE_UUID } = fieldTypes.CommonDBTypes;
@@ -76,7 +76,7 @@ export const generateEntityClientImports = (relationships, dto?, clientFramework
  * @param {string} clientFramework the client framework, 'angular' or 'react'.
  * @returns typeImports: Map
  */
-export const generateEntityClientEnumImports = (fields: Field[], clientFramework: string) => {
+export const generateEntityClientEnumImports = (fields: FieldAll[], clientFramework: string) => {
   const typeImports = new Map();
   const uniqueEnums = {};
   for (const field of fields) {
@@ -123,7 +123,7 @@ export const generateTestEntityId = (primaryKey: FieldType | PrimaryKey, index: 
 /**
  * Generate a test entity, according to the type
  */
-export const generateTsTestEntityForFields = (fields: Field[]): Record<string, string | number | boolean> => {
+export const generateTsTestEntityForFields = (fields: FieldAll[]): Record<string, string | number | boolean> => {
   const entries = fields
     .map(field => {
       const { fieldWithContentType, contentTypeFieldName, fieldTypeTimed, fieldTypeLocalDate } = field;

@@ -18,9 +18,9 @@ LABEL ALIAS=keycloak
 
 FROM mysql:9.2.0
 
-FROM mariadb:11.7.2
+FROM mariadb:11.8.2
 
-FROM mongo:8.0.9
+FROM mongo:8.0.10
 LABEL ALIAS=mongodb
 
 FROM couchbase/server:7.6.6
@@ -31,7 +31,7 @@ FROM cassandra:5.0.2
 FROM mcr.microsoft.com/mssql/server:2019-CU16-GDR1-ubuntu-20.04
 LABEL ALIAS=mssql
 
-FROM neo4j:5.26.7
+FROM neo4j:5.26.8
 
 FROM hazelcast/management-center:5.8.0
 LABEL ALIAS=hazelcast

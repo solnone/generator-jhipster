@@ -29,26 +29,28 @@ import {
   GENERATOR_BOOTSTRAP_APPLICATION_CLIENT,
   GENERATOR_BOOTSTRAP_APPLICATION_SERVER,
 } from '../generator-list.js';
-import type { Entity as ApplicationEntity } from '../../lib/types/application/entity.js';
 import type { GenericTaskGroup } from '../base-core/types.js';
-import type { ApplicationConfiguration } from '../../lib/types/application/yo-rc.js';
-import type { Entity as BaseEntity } from '../../lib/types/base/entity.js';
+import type { Entity as BaseEntity } from '../../lib/jhipster/types/entity.js';
 import { getConfigWithDefaults } from '../../lib/jhipster/default-application-options.js';
 import { BOOTSTRAP_APPLICATION } from '../base-simple-application/priorities.js';
+import type { ApplicationConfiguration } from './application-config-all.js';
+import type { EntityAll } from './entity-all.js';
 import type {
   ConfiguringEachEntityTaskParam,
-  TaskTypes as DefaultTaskTypes,
+  TaskTypes as DefaultTasks,
   EntityToLoad,
   PreparingEachEntityFieldTaskParam,
   PreparingEachEntityRelationshipTaskParam,
   PreparingEachEntityTaskParam,
 } from './tasks.js';
-import type { ApplicationAll, SourceAll } from './types-all.js';
+import type { ApplicationAll } from './application-properties-all.js';
+import type { SourceAll } from './source-all.js';
 import { CONTEXT_DATA_APPLICATION_ENTITIES_KEY, getEntitiesFromDir } from './support/index.js';
 import { CUSTOM_PRIORITIES, PRIORITY_NAMES, QUEUES } from './priorities.js';
 import type {
   Application as BaseApplication,
   Config as BaseApplicationConfig,
+  Entity as BaseApplicationEntity,
   Features as BaseApplicationFeatures,
   Options as BaseApplicationOptions,
   Source as BaseApplicationSource,
@@ -129,14 +131,14 @@ const getFirstArgForPriority = (priorityName: string) => ({
  * This is the base class for a generator that generates entities.
  */
 export default class BaseApplicationGenerator<
-  Entity extends ApplicationEntity = ApplicationEntity,
-  Application extends BaseApplication = ApplicationAll<Entity>,
-  ConfigType extends BaseApplicationConfig = BaseApplicationConfig & ApplicationConfiguration,
+  Entity extends BaseApplicationEntity = EntityAll,
+  Application extends BaseApplication<Entity> = ApplicationAll<Entity & EntityAll>,
+  Config extends BaseApplicationConfig = BaseApplicationConfig & ApplicationConfiguration,
   Options extends BaseApplicationOptions = BaseApplicationOptions,
   Source extends BaseApplicationSource = SourceAll,
   Features extends BaseApplicationFeatures = BaseApplicationFeatures,
-  TaskTypes extends DefaultTaskTypes<Entity, Application, Source> = DefaultTaskTypes<Entity, Application, Source>,
-> extends BaseGenerator<Application, ConfigType, Options, Source, Features, TaskTypes> {
+  Tasks extends DefaultTasks<Entity, Application, Source> = DefaultTasks<Entity, Application, Source>,
+> extends BaseGenerator<Application, Config, Options, Source, Features, Tasks> {
   static CONFIGURING_EACH_ENTITY = asPriority(CONFIGURING_EACH_ENTITY);
 
   static LOADING_ENTITIES = asPriority(LOADING_ENTITIES);
@@ -218,8 +220,8 @@ export default class BaseApplicationGenerator<
   /**
    * JHipster config with default values fallback
    */
-  override get jhipsterConfigWithDefaults(): Readonly<ConfigType & ApplicationConfiguration> {
-    return getConfigWithDefaults(super.jhipsterConfigWithDefaults) as ConfigType & ApplicationConfiguration;
+  override get jhipsterConfigWithDefaults(): Readonly<Config & ApplicationConfiguration> {
+    return getConfigWithDefaults(super.jhipsterConfigWithDefaults) as Config & ApplicationConfiguration;
   }
 
   dependsOnBootstrapApplication(
@@ -278,16 +280,16 @@ export default class BaseApplicationGenerator<
   /**
    * get sorted list of entities according to changelog date (i.e. the order in which they were added)
    */
-  getExistingEntities(): { name: string; definition: ApplicationEntity }[] {
+  getExistingEntities(): { name: string; definition: Entity }[] {
     function isBefore(e1, e2) {
       return (e1.definition.annotations?.changelogDate ?? 0) - (e2.definition.annotations?.changelogDate ?? 0);
     }
 
     const configDir = this.getEntitiesConfigPath();
 
-    const entities: { name: string; definition: ApplicationEntity }[] = [];
+    const entities: { name: string; definition: Entity }[] = [];
     for (const entityName of [...new Set(((this.jhipsterConfig.entities as string[]) || []).concat(getEntitiesFromDir(configDir)))]) {
-      const definition: ApplicationEntity = this.getEntityConfig(entityName)?.getAll() as unknown as ApplicationEntity;
+      const definition: Entity = this.getEntityConfig(entityName)?.getAll() as unknown as Entity;
       if (definition) {
         entities.push({ name: entityName, definition });
       }
@@ -349,8 +351,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asConfiguringEachEntityTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['ConfiguringEachEntityTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['ConfiguringEachEntityTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['ConfiguringEachEntityTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['ConfiguringEachEntityTaskParam']> {
     return taskGroup;
   }
 
@@ -358,8 +360,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asLoadingEntitiesTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['LoadingEntitiesTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['LoadingEntitiesTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['LoadingEntitiesTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['LoadingEntitiesTaskParam']> {
     return taskGroup;
   }
 
@@ -367,8 +369,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asPreparingEachEntityTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['PreparingEachEntityTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['PreparingEachEntityTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['PreparingEachEntityTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['PreparingEachEntityTaskParam']> {
     return taskGroup;
   }
 
@@ -376,8 +378,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asPreparingEachEntityFieldTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['PreparingEachEntityFieldTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['PreparingEachEntityFieldTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['PreparingEachEntityFieldTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['PreparingEachEntityFieldTaskParam']> {
     return taskGroup;
   }
 
@@ -385,8 +387,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asPreparingEachEntityRelationshipTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['PreparingEachEntityRelationshipTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['PreparingEachEntityRelationshipTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['PreparingEachEntityRelationshipTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['PreparingEachEntityRelationshipTaskParam']> {
     return taskGroup;
   }
 
@@ -394,8 +396,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asPostPreparingEachEntityTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['PostPreparingEachEntityTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['PostPreparingEachEntityTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['PostPreparingEachEntityTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['PostPreparingEachEntityTaskParam']> {
     return taskGroup;
   }
 
@@ -403,8 +405,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asWritingEntitiesTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['WritingEntitiesTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['WritingEntitiesTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['WritingEntitiesTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['WritingEntitiesTaskParam']> {
     return taskGroup;
   }
 
@@ -412,8 +414,8 @@ export default class BaseApplicationGenerator<
    * Utility method to get typed objects for autocomplete.
    */
   asPostWritingEntitiesTaskGroup(
-    taskGroup: GenericTaskGroup<this, TaskTypes['PostWritingEntitiesTaskParam']>,
-  ): GenericTaskGroup<any, TaskTypes['PostWritingEntitiesTaskParam']> {
+    taskGroup: GenericTaskGroup<this, Tasks['PostWritingEntitiesTaskParam']>,
+  ): GenericTaskGroup<any, Tasks['PostWritingEntitiesTaskParam']> {
     return taskGroup;
   }
 
@@ -477,10 +479,13 @@ export default class BaseApplicationGenerator<
    * This method doesn't filter entities. An filtered config can be changed at this priority.
    * @returns {string[]}
    */
-  #getEntitiesDataToConfigure(): ConfiguringEachEntityTaskParam[] {
+  #getEntitiesDataToConfigure(): ConfiguringEachEntityTaskParam<Entity, Application>[] {
     return this.getExistingEntityNames().map(entityName => {
       const entityStorage = this.getEntityConfig(entityName, true);
-      return { entityName, entityStorage, entityConfig: entityStorage!.createProxy() } as ConfiguringEachEntityTaskParam;
+      return { entityName, entityStorage, entityConfig: entityStorage!.createProxy() } as ConfiguringEachEntityTaskParam<
+        Entity,
+        Application
+      >;
     });
   }
 
@@ -491,7 +496,7 @@ export default class BaseApplicationGenerator<
    * @returns {string[]}
    */
   #getEntitiesDataToLoad(): EntityToLoad<any>[] {
-    const application = this.#application as ApplicationAll<Entity>;
+    const application = this.#application as ApplicationAll;
     const builtInEntities: string[] = [];
     if (application.generateBuiltInUserEntity) {
       // Reorder User entity to be the first one to be loaded
@@ -530,7 +535,7 @@ export default class BaseApplicationGenerator<
    * Get entities to prepare.
    * @returns {object[]}
    */
-  #getEntitiesDataToPrepare(): Pick<PreparingEachEntityTaskParam, 'entity' | 'entityName' | 'description'>[] {
+  #getEntitiesDataToPrepare(): Pick<PreparingEachEntityTaskParam<Entity, Application>, 'entity' | 'entityName' | 'description'>[] {
     return this.#entitiesForTasks;
   }
 
@@ -540,7 +545,7 @@ export default class BaseApplicationGenerator<
    * @returns {object[]}
    */
   #getEntitiesFieldsDataToPrepare(): Pick<
-    PreparingEachEntityFieldTaskParam,
+    PreparingEachEntityFieldTaskParam<Entity, Application>,
     'entity' | 'entityName' | 'field' | 'fieldName' | 'description'
   >[] {
     return this.#getEntitiesDataToPrepare()
@@ -556,7 +561,7 @@ export default class BaseApplicationGenerator<
           description: `${entityName}#${field.fieldName}`,
         }));
       })
-      .flat();
+      .flat() as any;
   }
 
   /**
@@ -565,7 +570,7 @@ export default class BaseApplicationGenerator<
    * @returns {object[]}
    */
   #getEntitiesRelationshipsDataToPrepare(): Pick<
-    PreparingEachEntityRelationshipTaskParam,
+    PreparingEachEntityRelationshipTaskParam<Entity, Application>,
     'entity' | 'entityName' | 'relationship' | 'relationshipName' | 'description'
   >[] {
     return this.#getEntitiesDataToPrepare()
@@ -581,7 +586,7 @@ export default class BaseApplicationGenerator<
           description: `${entityName}#${relationship.relationshipName}`,
         }));
       })
-      .flat();
+      .flat() as any;
   }
 
   /**
